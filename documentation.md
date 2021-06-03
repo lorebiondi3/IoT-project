@@ -37,28 +37,28 @@ This is the related MQTT sensor code:
 ```
 if(state == STATE_SUBSCRIBED){
 
-   struct tm* tmp;
-   char date [20];
-   char time [20];
-   etimer_set(&publish_timer, DEFAULT_PUBLISH_INTERVAL);
-   PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&publish_timer));
+	struct tm* tmp;
+	char date [20];
+	char time [20];
+	etimer_set(&publish_timer, DEFAULT_PUBLISH_INTERVAL);
+	PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&publish_timer));
 
-   sprintf(pub_topic, "%s", "humidity");
+	sprintf(pub_topic, "%s", "humidity");
 
-   if(set == false){
-    humidity_perc = (rand() % (80 - 20 + 1)) + 20;
-   }
-   set = false;
-
-			current_time=time(NULL);
-			tmp=gmtime(&current_time);
-			sprintf(date,"%d-%d-%d",tmp->tm_mday,(tmp->tm_mon+1),(tmp->tm_year+1900));
-			sprintf(time,"%d:%d:%d",tmp->tm_hour,tmp->tm_min,tmp->tm_sec);
-   
-			sprintf(app_buffer, "{\"node_id\":%d,\"date\":\"%s\",\"time\":\"%s\",\"humidity\":%d}",node_id,date,time,humidity_perc);
-			mqtt_publish(&conn, NULL, pub_topic, (uint8_t *)app_buffer, strlen(app_buffer), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
-               
+	if(set == false){
+	humidity_perc = (rand() % (80 - 20 + 1)) + 20;
 	}
+	set = false;
+
+	current_time=time(NULL);
+	tmp=gmtime(&current_time);
+	sprintf(date,"%d-%d-%d",tmp->tm_mday,(tmp->tm_mon+1),(tmp->tm_year+1900));
+	sprintf(time,"%d:%d:%d",tmp->tm_hour,tmp->tm_min,tmp->tm_sec);
+
+	sprintf(app_buffer, "{\"node_id\":%d,\"date\":\"%s\",\"time\":\"%s\",\"humidity\":%d}",node_id,date,time,humidity_perc);
+	mqtt_publish(&conn, NULL, pub_topic, (uint8_t *)app_buffer, strlen(app_buffer), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
+               
+}
 ```
 The humidity sensor behaviour is emulated generating every 30 seconds a random integer between 20 and 80. If the humidity percentage has been set before (*set=true*), this random generation is not performed and the humidity value previously set is used. This is done to make the situation a little bit more realistic. Once measured, this percentage is embedded in a json message with the following structure:
 ```
@@ -76,47 +76,44 @@ The Java Collector, subscribed to the broker on the topic *humidity*, executes t
 ```
 public void messageArrived(String topic, MqttMessage message) throws Exception {
 		
-		String json_message = new String(message.getPayload());
-		System.out.println(json_message);
-		JSONParser parser = new JSONParser();
-		JSONObject jsonObject = null;
-		try {
-			jsonObject = (JSONObject) parser.parse(json_message);
-		} catch (ParseException e) {
-			e.printStackTrace();
-		}
-		if(jsonObject != null) {
-			long node_id = (Long) jsonObject.get("node_id");
-			String date = (String) jsonObject.get("date");
-			String time = (String) jsonObject.get("time");
-			long humidity = (Long) jsonObject.get("humidity");
-			
-			storeMqttData(node_id,humidity,date,time);
-			
-   if(humidity>60 || humidity<40) {
-				humidityControl(node_id,date,time,humidity);
-			}
-   
-		}
-		
+	String json_message = new String(message.getPayload());
+	System.out.println(json_message);
+	JSONParser parser = new JSONParser();
+	JSONObject jsonObject = null;
+	try {
+		jsonObject = (JSONObject) parser.parse(json_message);
+	} catch (ParseException e) {
+		e.printStackTrace();
 	}
+	if(jsonObject != null) {
+		long node_id = (Long) jsonObject.get("node_id");
+		String date = (String) jsonObject.get("date");
+		String time = (String) jsonObject.get("time");
+		long humidity = (Long) jsonObject.get("humidity");
+
+		storeMqttData(node_id,humidity,date,time);
+			
+		if(humidity>60 || humidity<40) {
+			humidityControl(node_id,date,time,humidity);
+		}
+	}
+}
 ```
 Once the json payload of the message is extracted and shown to the user, it is parsed using the *json simple* Java library. The data are stored in the database by the function *storeMqttData*. Then, we have the **control logic**: if the humidity value is out of the range 40%-60%, the function *humidityControl* is executed. The code of the function is the following:
 ```
 public void humidityControl(long node_id,final String date,final String time,long humidity) {
 		
-		final int new_humidity = (int) ((Math.random() * (61 - 40)) + 40);
-		System.out.println("["+date+" "+time+"] Humidity out of range : 
-  ting it to "+new_humidity+" %");
-  
-		try {
-			JSONObject obj = new JSONObject();
-   obj.put("humidity", new_humidity);
-			MqttMessage message = new MqttMessage(obj.toJSONString().getBytes());
-			mqttClient.publish(publisher_topic, message);
-		}catch(MqttException me) {
-			me.printStackTrace();
-		}
+	final int new_humidity = (int) ((Math.random() * (61 - 40)) + 40);
+	System.out.println("["+date+" "+time+"] Humidity out of range : setting it to "+new_humidity+" %");
+
+	try {
+		JSONObject obj = new JSONObject();
+		obj.put("humidity", new_humidity);
+		MqttMessage message = new MqttMessage(obj.toJSONString().getBytes());
+		mqttClient.publish(publisher_topic, message);
+	}catch(MqttException me) {
+		me.printStackTrace();
+	}
   
 }
 ```
