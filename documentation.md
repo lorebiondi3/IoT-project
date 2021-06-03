@@ -132,7 +132,7 @@ The aim of this network is to periodically detect the presence of a person in a 
 
 ### sensors scrivi qui la parte sui sensori
 
-In order to be periodically updated, the Java Collector establishes an **observing relation** with all the 5 sensors. This is performed at the application boostrap. The following code show an example for a generic sensor with a generic *connectionURI* URI. Note that the observe relation is established towards the **presence** resource of each sensor. 
+In order to be periodically updated, the Java Collector establishes an **observing relation** with all the 5 sensors. This is performed at the application boostrap. The following code shows an example for a generic sensor with a generic *connectionURI* URI. Note that the observing relation is established towards the **presence** resource of each sensor. 
 ```
 String endpoint = "presence";
 CoapClient client = new CoapClient(connectionURI + endpoint);
@@ -166,8 +166,9 @@ CoapObserveRelation relation = client.observe(
 );
 ```
 Every time an updating is received, the *onLoad* function is executed. Here, the json message is shown in output and then parsed. Then, a control logic is executed by the function *lightControl* and finally the data are stored in the MySql database. 
-The *control logic* consists of checking wheter a presence is detected or not in a room and turn the light on or off consequently.
+The *control logic* consists of checking wheter a presence is detected or not in a room and turning the respective light on or off consequently. To this aim, a **post request** is issued towards the relative sensor node, on the **light** resource. The following code shows an example for a generic sensor with a generic *actuatorURI* URI. The *postPayload* can be equal to *on* or *off*, based on the presence detection.
 ```
-CoapClient client = new CoapClient(actuatorURI);
+String endpoint = "light";
+CoapClient client = new CoapClient(actuatorURI + endpoint);
 CoapResponse res = client.post("mode="+postPayload,MediaTypeRegistry.TEXT_PLAIN);
 ```
