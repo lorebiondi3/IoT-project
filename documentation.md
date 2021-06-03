@@ -11,7 +11,7 @@ For the **MQTT network**, there is a unique device deployed in the center of the
 In addition to these 6 sensors, there is an additional device in charge of acting as a border router. This way, every sensor can comunicate with the external world, and in particular with the **Java Collector**, in order to periodically report data and receive actuation commands. The collector is teoretically deployed on the cloud, but in this project it runs on the same virtual machine where Cooja runs. This module is aimed to collect data reported by the sensors, output them to the user via a textual log and store them in a MySql database. In addition to this, it implements a control logic to regulate the behaviour of the sensors. 
 To enable the communication between the MQTT device and the Java collector, an MQTT broker is needed. For this project is used Mosquitto, an open source implementation of an MQTT broker.
 
-This is the overall scenario, where the orange sensors are CoAP ones and the green is the MQTT device. The blue device is the device acting as border router.
+This is the overall scenario, where the orange sensors are CoAP ones and the green one is the MQTT device. The blue device is the device acting as border router.
 
 ![deployment-iot](https://user-images.githubusercontent.com/73020009/120631128-cd4d4180-c467-11eb-865d-8fdc6b05e3f3.png)
 
@@ -123,3 +123,51 @@ This function simply choose randomly a new accettable (within 40% and 60%) humid
 The MQTT device receives remote commands by **subscribing on the topic *actuator***. By **publishing** on the same topic, the Java Collector can regulate the humidity levels in the house.
 
 Each time a message is published on the topic *actuator*, the MQTT device simply parse the json message and set the humidity percentage to the specified value. This operation is emulated assigning this value to an internal variable. Moreover, the *set* boolean variable is set to true to ensure the next measurement to be consistent.
+
+## CoAP Network
+This network is simulated using Cooja and is composed by 5 CoAP sensors, one for each room. There is also an additional device that acts as border router to gain external access. Each device exposes 2 resources:
+- **res_presence:** acts as a sensor for the detection of a presence in that room.
+- **res_light:** acts as an actuator, to switch on/off the light in that room.
+The aim of this network is to periodically detect the presence of a person in a room of the house. The data are sent to the Java Collector, that, exploiting some simple control logic, can give the order to turn the light on or off in a room.
+
+### sensors scrivi qui la parte sui sensori
+
+In order to be periodically updated, the Java Collector establishes an **observing relation** with all the 5 sensors. This is performed at the application boostrap. The following code show an example for a generic sensor with a generic *connectionURI* URI. Note that the observe relation is established towards the **presence** resource of each sensor. 
+```
+String endpoint = "presence";
+CoapClient client = new CoapClient(connectionURI + endpoint);
+CoapObserveRelation relation = client.observe(
+		new CoapHandler() {
+			public void onLoad(CoapResponse response) {
+				System.out.println(response.getResponseText());
+
+				JSONParser parser = new JSONParser();
+				JSONObject jsonObject = null;
+				try {
+					jsonObject = (JSONObject) parser.parse(response.getResponseText());
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+				if(jsonObject != null) {
+					long node_id = (Long) jsonObject.get("node_id");
+					String date = (String) jsonObject.get("date");
+					String time = (String) jsonObject.get("time");
+					String room = (String) jsonObject.get("room");
+					long presence = (Long) jsonObject.get("presence");
+
+					lightControl(node_id,presence,date,time,room);
+
+					storeCoAPData(node_id,presence,date,time,room);
+				}
+
+
+			}
+		}
+);
+```
+Every time an updating is received, the *onLoad* function is executed. Here, the json message is shown in output and then parsed. Then, a control logic is executed by the function *lightControl* and finally the data are stored in the MySql database. 
+The *control logic* consists of checking wheter a presence is detected or not in a room and turn the light on or off consequently.
+```
+CoapClient client = new CoapClient(actuatorURI);
+CoapResponse res = client.post("mode="+postPayload,MediaTypeRegistry.TEXT_PLAIN);
+```
