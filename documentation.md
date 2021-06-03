@@ -17,6 +17,11 @@ This is the overall scenario, where the orange sensors are CoAP ones and the gre
 
 Within the context of project, the presented scenario has been developed in this way: 
 - The CoAP network has been simulated exploiting the Cooja simulator
-- The MQTT network has been deployed on real devices from the IoT testbed
-- The Java Collector runs on the same VM where Cooja runs
+- The MQTT network (including the MQTT Broker) has been deployed on real devices from the IoT testbed
+- The Java Collector has been deployed on the same VM where Cooja runs
+- The MySql Database runs locally on the VM 
+
+As regards the MQTT network, it is composed by 2 real sensors (*/dev/ttyACM31* and */dev/ttyACM83*) of the testbed. The */dev/ttyACM83* acts as border router, while the */dev/ttyACM31* is the actual humidity sensor/actuator.
+
+## MQTT Network
 
