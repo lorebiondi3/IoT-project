@@ -1,3 +1,4 @@
+![Screenshot (7)](https://user-images.githubusercontent.com/73020009/120615425-8efc5600-c458-11eb-99cd-44c99621db74.png)
 # IoT-project
 This project was developed for the AIDE MSc's IoT course at the University of Pisa
 
