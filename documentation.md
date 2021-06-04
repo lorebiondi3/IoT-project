@@ -248,10 +248,12 @@ Second iteration:
 
 The presence detection returns the same results as before, thus nothing has changed. Note that the sensor, once received the actuation command, first check whether the led is already set in the desired mode. For instance, the sensor 2 (kitchen), receives from the Java Collector the command to turn off the light in the room. The sensor checks the status of the light bulb and finds out that it is already off (because it has been turned off at the previous iteration).
 
-Below, three more iterations:
+Three more iterations:
 
 ![Screenshot (27)](https://user-images.githubusercontent.com/73020009/120788091-5c259100-c530-11eb-9b56-41bb2803df93.png)
+
 ![Screenshot (28)](https://user-images.githubusercontent.com/73020009/120788098-5cbe2780-c530-11eb-908e-9524bd83e2e0.png)
+
 ![Screenshot (29)](https://user-images.githubusercontent.com/73020009/120788100-5d56be00-c530-11eb-8b48-94e01bad3cfd.png)
 
 
