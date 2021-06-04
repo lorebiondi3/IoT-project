@@ -268,6 +268,19 @@ Three more iterations:
 
 ![Screenshot (29)](https://user-images.githubusercontent.com/73020009/120788100-5d56be00-c530-11eb-8b48-94e01bad3cfd.png)
 
+## Java Collector
+This module of the telemetry and control system collects data from IoT devices. These are its main functionalities:
+- Process the received data and apply some modifications to one or more actuators, executing a control logic
+- Store received data in a MySql database
+- Output data to the user via a textual log
 
+The Collector has been implemented using **Java**. In particular:
+- **Californium** has been used to implement CoAP client functionalities
+- **Paho** has been used to implement MQTT client functionalities
+
+## Data Encoding
+The message encoding format exploited for this project is **JSON** (*JavaScript Object Notation*), a lightweight data encoding based on collection of name-value pairs. 
+The use-case of this project pavents the way to this kind of encoding language, rather than XML. This is due to the low rigidity and simple requirements of a Smart Home application as the one presented in this document. JSON is better for simple applications, while XML is better for applications with complex requirements surrounding data interchange, such as in enterprise or in industrial control systems where security is crucial.
+The main requirements of this application are the low latency and the flexibility in the data interchange, rather than a high level of data integrity and control. Indeed, if some data get lost or arrive corrupted or incompleted to the collector, this is not a crucial problem. The important feature is that data interchange goes smoothly. JSON is faster than XML, because it is designed specifically for data interchange. Indeed, JSON encoding requires less bytes for transit and the JSON parsers (as the one used in the Java Collector, *json simple*) are less complex, which requires less processing time and memory overhead. Instead, XML is slower, because it is designed for a lot more than just data interchange.
 
 
