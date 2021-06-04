@@ -181,7 +181,7 @@ Unlike *res_presence*, this resource is not observable and can handle only post 
 
 A simple example that summarises the interaction between a CoAP sensor and the Java Collector.
 
-![coap-example](https://user-images.githubusercontent.com/73020009/120797150-ed4e3500-c53b-11eb-937a-45a3d417fe45.png)
+![coap-example (1)](https://user-images.githubusercontent.com/73020009/120806203-dbbe5a80-c546-11eb-8fb6-1d13417784fa.png)
 
 ### Java Collector
 In order to be periodically updated, the Java Collector establishes an **observing relation** with all the 5 sensors. This is performed at the application boostrap. The following code shows an example for a generic sensor with a generic *connectionURI* URI. Note that the observing relation is established towards the **presence** resource of each sensor. 
