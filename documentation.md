@@ -220,3 +220,28 @@ String endpoint = "light";
 CoapClient client = new CoapClient(actuatorURI + endpoint);
 CoapResponse res = client.post("mode="+postPayload,MediaTypeRegistry.TEXT_PLAIN);
 ```
+
+### Simulation
+A simulation of the presented CoAP network using Cooja.
+
+The deployment is composed by 6 Cooja sensors. The sensor 1 is the border router. Then we have one sensors for each room: kitchen (2), dining room (3), living room (4), bathroom (5) and bedroom (6).
+
+![Screenshot (17)](https://user-images.githubusercontent.com/73020009/120779837-c8e85d80-c527-11eb-9022-00721fe9035b.png)
+
+At the beginning of the simulation, the network requires some time to build the RPL's DODAG. After this, the Java Collector starts its execution establishing observing relations with the 5 CoAP servers
+
+![asas (2)](https://user-images.githubusercontent.com/73020009/120781688-950e3780-c529-11eb-9ab9-f7d0781617ae.png)
+
+Then, the sensors start to notify the Java Collector with periodical presence updates, exploiting the observing mechanism. This is the first notification, with the consequent led status.
+
+![final](https://user-images.githubusercontent.com/73020009/120782184-0e0d8f00-c52a-11eb-9db4-90e6f59b764d.png)
+
+From the Java Collector's side, this is the situation: 
+
+![asas (3)](https://user-images.githubusercontent.com/73020009/120782422-457c3b80-c52a-11eb-94cb-87e5059d137e.png)
+
+
+
+
+
+
