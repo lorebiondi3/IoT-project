@@ -46,7 +46,7 @@ if(state == STATE_SUBSCRIBED){
 	sprintf(pub_topic, "%s", "humidity");
 
 	if(set == false){
-	humidity_perc = (rand() % (80 - 20 + 1)) + 20;
+		humidity_perc = (rand() % (80 - 20 + 1)) + 20;
 	}
 	set = false;
 
@@ -128,10 +128,55 @@ Each time a message is published on the topic *actuator*, the MQTT device simply
 This network is simulated using Cooja and is composed by 5 CoAP sensors, one for each room. There is also an additional device that acts as border router to gain external access. Each device exposes 2 resources:
 - **res_presence:** acts as a sensor for the detection of a presence in that room.
 - **res_light:** acts as an actuator, to switch on/off the light in that room.
-The aim of this network is to periodically detect the presence of a person in a room of the house. The data are sent to the Java Collector, that, exploiting some simple control logic, can give the order to turn the light on or off in a room.
+The aim of this network is to periodically detect the presence of a person in a room of the house. The data are sent to the Java Collector, that, exploiting some simple control logic, can give the order to turn the light on or off in a room. In order to be periodically updated, the Java Collector establishes an **observing relation** with the presence resource of each one of the 5 sensors.
 
-### sensors scrivi qui la parte sui sensori
+### CoAP Servers
+The main code of each sensor performs the following actions:
+- **Initialize** a timer (*et*) with a value of **30 seconds** (this is the periodicity through which the sensor will send updating about the resource)
+- **Activate** both *presence* and *light* resources 
+- **Enter** this endless loop:
+ ```
+	while(1){
+		PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
+		res_presence.trigger();
+		etimer_restart(&et);
+	}
+```
+With the function **res_presence.trigger()**, executed every 30 seconds, the CoAP server triggers the event associated with the observable resource *presence* and notify the Java Collector (*observer*). 
+In order to be observable, the resource *res_presence* is defined as follow:
+```
+EVENT_RESOURCE(res_presence,
+         "title=\"Presence\";obs",
+         res_get_handler,
+         NULL,
+         NULL,
+         NULL,
+         res_event_handler);
+```
+As only **get** operations are performed on this resource, the post-put-delete handlers are not defined. The *res_event_handler* is called every the *res_presence.trigger* is executed by the main code of the CoAP server. This function simply notify all the observers (in our case only the Java Collector) of the *presence* resource. Before doing this, the **res_get_handler** is executed. Inside this function, the behaviour of the presence sensor is emulated using a **random function** that generates an integer value between 0 and 100. In particular a threshold (50) has been defined. If the random value is equal or above the threshold means that a presence is not detected in that room, otherwise someone is in the room. Then, a json message is created and notified to all the observers. The structure of the json message is the following:
+```
+{
+	"node_id" : 2,
+	"date" : "4-6-2021",
+	"time" : "9:34:55",
+	"room" : "kitchen",
+	"presence" : 1
+} 
+```
+The presence field is equal to 1 when a presence has been detected, 0 otherwise.
 
+The *light* resource acts as an actuator, in charge of turning the light on or off in a specific room. The commands are sent by the Java Collector, that, after executing a control logic, issues a **post request** on the light resource of a specific sensor. The *res_light* is structured in this way:
+```
+RESOURCE(res_light,
+         "title=\"Light: ?POST/PUT mode=on|off\";rt=\"light\"",
+         NULL,
+         res_post_put_handler,
+         res_post_put_handler,
+         NULL);
+```
+Unlike *res_presence*, this resource is not observable and can handle only post (or put) requests. The behaviour of the light bulb is emulated by the **led** interface. Considering a specific sensor, if only the **green led** is on, it means that **the light bulb in the relative room is on**. Otherwise, if the **red led** is on, **the light bulb is off**. The *res_post_put_handler*, after extracting the post variable (*on* or *off*), works with leds in order to implement this situation.
+
+### Java Collector
 In order to be periodically updated, the Java Collector establishes an **observing relation** with all the 5 sensors. This is performed at the application boostrap. The following code shows an example for a generic sensor with a generic *connectionURI* URI. Note that the observing relation is established towards the **presence** resource of each sensor. 
 ```
 String endpoint = "presence";
