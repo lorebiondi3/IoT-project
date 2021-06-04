@@ -124,7 +124,7 @@ This function simply choose randomly a new accettable (within 40% and 60%) humid
 ### Actuator
 The MQTT device receives remote commands by **subscribing on the topic *actuator***. By **publishing** on the same topic, the Java Collector can regulate the humidity levels in the house.
 
-Each time a message is published on the topic *actuator*, the MQTT device simply parse the json message and set the humidity percentage to the specified value. This operation is emulated assigning this value to an internal variable. Moreover, the *set* boolean variable is set to true to ensure the next measurement to be consistent.
+Each time a message is published on the topic *actuator*, the MQTT device simply parse the json message and set the humidity percentage to the specified value. This operation is emulated assigning this value to an internal variable. Moreover, the boolean variable *set* is set to true to ensure the next measurement to be consistent.
 
 In the following image an example of interaction is shown. 
 
