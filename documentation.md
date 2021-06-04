@@ -126,6 +126,14 @@ The MQTT device receives remote commands by **subscribing on the topic *actuator
 
 Each time a message is published on the topic *actuator*, the MQTT device simply parse the json message and set the humidity percentage to the specified value. This operation is emulated assigning this value to an internal variable. Moreover, the *set* boolean variable is set to true to ensure the next measurement to be consistent.
 
+In the following image an example of interaction is shown. 
+
+![mqtt-example (1)](https://user-images.githubusercontent.com/73020009/120809961-e67aee80-c54a-11eb-92df-27e5f0ee25fe.png)
+
+The MQTT device is subscribed to the topic *actuator* and the Java Collector is subscribed to the topic *humidity*. The sensor publishes the measured humidity percentage and the Collector detects that this value (65) is out of the allowed range. Thus, it publishes a message on the topic *actuator* with a new humidity value (43) to set in the house.
+
+### Simulation
+
 ## CoAP Network
 This network is simulated using Cooja and is composed by 5 CoAP sensors, one for each room. There is also an additional device that acts as border router to gain external access. Each device exposes 2 resources:
 - **res_presence:** acts as a sensor for the detection of a presence in that room.
@@ -133,7 +141,7 @@ This network is simulated using Cooja and is composed by 5 CoAP sensors, one for
 
 The aim of this network is to periodically detect the presence of a person in a room of the house. The data are sent to the Java Collector, that, exploiting some simple control logic, can give the order to turn the light on or off in a room. In order to be periodically updated, the Java Collector establishes an **observing relation** with the presence resource of each one of the 5 sensors.
 
-### CoAP Servers
+### CoAP Server
 The main code of each sensor performs the following actions:
 - **Initialize** a timer (*et*) with a value of **30 seconds**. This will be the periodicity through which the sensor will send updating about the resource
 - **Activate** both *presence* and *light* resources 
@@ -179,10 +187,6 @@ RESOURCE(res_light,
 ```
 Unlike *res_presence*, this resource is not observable and can handle only post (or put) requests. The behaviour of the light bulb is emulated by the **led** interface. Considering a specific sensor, if only the **green led** is on, it means that **the light bulb in the relative room is on**. Otherwise, if the **red led** is on, **the light bulb is off**. The *res_post_put_handler*, after extracting the post variable (*on* or *off*), works with leds in order to implement this situation.
 
-A simple example that summarises the interaction between a CoAP sensor and the Java Collector.
-
-![coap-example (1)](https://user-images.githubusercontent.com/73020009/120806203-dbbe5a80-c546-11eb-8fb6-1d13417784fa.png)
-
 ### Java Collector
 In order to be periodically updated, the Java Collector establishes an **observing relation** with all the 5 sensors. This is performed at the application boostrap. The following code shows an example for a generic sensor with a generic *connectionURI* URI. Note that the observing relation is established towards the **presence** resource of each sensor. 
 ```
@@ -224,6 +228,10 @@ String endpoint = "light";
 CoapClient client = new CoapClient(actuatorURI + endpoint);
 CoapResponse res = client.post("mode="+postPayload,MediaTypeRegistry.TEXT_PLAIN);
 ```
+
+A simple example that summarises the interaction between a CoAP sensor and the Java Collector.
+
+![coap-example (2)](https://user-images.githubusercontent.com/73020009/120810963-cb5cae80-c54b-11eb-9193-35ec666fd10a.png)
 
 ### Simulation
 A simulation of the presented CoAP network using Cooja.
