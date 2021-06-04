@@ -179,6 +179,10 @@ RESOURCE(res_light,
 ```
 Unlike *res_presence*, this resource is not observable and can handle only post (or put) requests. The behaviour of the light bulb is emulated by the **led** interface. Considering a specific sensor, if only the **green led** is on, it means that **the light bulb in the relative room is on**. Otherwise, if the **red led** is on, **the light bulb is off**. The *res_post_put_handler*, after extracting the post variable (*on* or *off*), works with leds in order to implement this situation.
 
+A simple example that summarises the interaction between a CoAP sensor and the Java Collector.
+
+![coap-example](https://user-images.githubusercontent.com/73020009/120797150-ed4e3500-c53b-11eb-937a-45a3d417fe45.png)
+
 ### Java Collector
 In order to be periodically updated, the Java Collector establishes an **observing relation** with all the 5 sensors. This is performed at the application boostrap. The following code shows an example for a generic sensor with a generic *connectionURI* URI. Note that the observing relation is established towards the **presence** resource of each sensor. 
 ```
