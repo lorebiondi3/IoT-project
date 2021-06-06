@@ -38,10 +38,7 @@ The MQTT device reports periodically the relative humidity percentage in the hou
 This is the related MQTT sensor code:
 ```
 if(state == STATE_SUBSCRIBED){
-
-	struct tm* tmp;
-	char date [20];
-	char time [20];
+	
 	etimer_set(&publish_timer, DEFAULT_PUBLISH_INTERVAL);
 	PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&publish_timer));
 
@@ -52,22 +49,16 @@ if(state == STATE_SUBSCRIBED){
 	}
 	set = false;
 
-	current_time=time(NULL);
-	tmp=gmtime(&current_time);
-	sprintf(date,"%d-%d-%d",tmp->tm_mday,(tmp->tm_mon+1),(tmp->tm_year+1900));
-	sprintf(time,"%d:%d:%d",tmp->tm_hour,tmp->tm_min,tmp->tm_sec);
+	sprintf(app_buffer, "{\"humidity\":%d}",humidity_perc);
+	printf("%s \n",app_buffer);
 
-	sprintf(app_buffer, "{\"node_id\":%d,\"date\":\"%s\",\"time\":\"%s\",\"humidity\":%d}",node_id,date,time,humidity_perc);
 	mqtt_publish(&conn, NULL, pub_topic, (uint8_t *)app_buffer, strlen(app_buffer), MQTT_QOS_LEVEL_0, MQTT_RETAIN_OFF);
-               
+
 }
 ```
-The humidity sensor behaviour is emulated generating every 30 seconds a random integer between 20 and 80. If the humidity percentage has been set before (*set=true*), this random generation is not performed and the humidity value previously set is used. This is done to make the situation a little bit more realistic. Once measured, this percentage is embedded in a json message with the following structure:
+The humidity sensor behaviour is emulated generating every 30 seconds (*DEFAULT_PUBLISH_INTERVAL*) a random integer between 20 and 80. If the humidity percentage has been set before (*set=true*), this random generation is not performed and the humidity value previously set is used. This is done to make the situation a little bit more realistic. Once measured, this percentage is embedded in a json message with the following structure:
 ```
 {
- "node_id" : 2
- "date" : "3-6-2021"
- "time" : "16:45:32"
  "humidity" : 55
 }
 ```
@@ -79,7 +70,7 @@ The Java Collector, subscribed to the broker on the topic *humidity*, executes t
 public void messageArrived(String topic, MqttMessage message) throws Exception {
 		
 	String json_message = new String(message.getPayload());
-	System.out.println(json_message);
+	
 	JSONParser parser = new JSONParser();
 	JSONObject jsonObject = null;
 	try {
@@ -88,22 +79,29 @@ public void messageArrived(String topic, MqttMessage message) throws Exception {
 		e.printStackTrace();
 	}
 	if(jsonObject != null) {
-		long node_id = (Long) jsonObject.get("node_id");
-		String date = (String) jsonObject.get("date");
-		String time = (String) jsonObject.get("time");
+
 		long humidity = (Long) jsonObject.get("humidity");
 
-		storeMqttData(node_id,humidity,date,time);
-			
+		SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+		Date d = new Date();
+		String[] tokens = dateFormat.format(d).split(" ");
+		String date = tokens[0];
+		String time = tokens[1];
+
+		System.out.println("{\"date\":"+date+",\"time\":"+time+",\"humidity\":"+humidity+"}");
+
+		storeMqttData(humidity,date,time);
+		
 		if(humidity>60 || humidity<40) {
-			humidityControl(node_id,date,time,humidity);
+			humidityControl(date,time,humidity);
 		}
+
 	}
 }
 ```
-Once the json payload of the message is extracted and shown to the user, it is parsed using the *json simple* Java library. The data are stored in the database by the function *storeMqttData*. Then, we have the **control logic**: if the humidity value is out of the range 40%-60%, the function *humidityControl* is executed. The code of the function is the following:
+Once the json payload of the message is extracted, it is parsed using the *json simple* Java library. After getting the current date and time, the measurement is shown in output to the user and then stored in the database by the function *storeMqttData*. Finally, we have the **control logic**: if the humidity value is out of the range 40%-60%, the function *humidityControl* is executed. The code of the function is the following:
 ```
-public void humidityControl(long node_id,final String date,final String time,long humidity) {
+public void humidityControl(String date,String time,long humidity) {
 		
 	final int new_humidity = (int) ((Math.random() * (61 - 40)) + 40);
 	System.out.println("["+date+" "+time+"] Humidity out of range : setting it to "+new_humidity+" %");
@@ -119,7 +117,7 @@ public void humidityControl(long node_id,final String date,final String time,lon
   
 }
 ```
-This function simply choose randomly a new accettable (within 40% and 60%) humidity value to set in the house and publish it on the topic *actuator* (*publisher_topic*) as a json message. This message is a simple one, composed only by one field: *{"humidity":43}*.
+This function simply choose randomly a new accettable (within 40% and 60%) humidity value to set in the house and publish it on the topic **actuator** (*publisher_topic*) as a json message. Also in this case, the message is a simple one, composed only by one field: *{"humidity" : 43}*.
 
 ### Actuator
 The MQTT device receives remote commands by **subscribing on the topic *actuator***. By **publishing** on the same topic, the Java Collector can regulate the humidity levels in the house.
@@ -128,9 +126,9 @@ Each time a message is published on the topic *actuator*, the MQTT device simply
 
 In the following image an example of interaction is shown. 
 
-![mqtt-example (1)](https://user-images.githubusercontent.com/73020009/120809961-e67aee80-c54a-11eb-92df-27e5f0ee25fe.png)
+![mqtt-example (2)](https://user-images.githubusercontent.com/73020009/120915605-d6772200-c6a4-11eb-826b-594525419046.png)
 
-The MQTT device is subscribed to the topic *actuator* and the Java Collector is subscribed to the topic *humidity*. The sensor publishes the measured humidity percentage and the Collector detects that this value (65) is out of the allowed range. Thus, it publishes a message on the topic *actuator* with a new humidity value (43) to set in the house.
+The MQTT device is subscribed to the topic *actuator* and the Java Collector is subscribed to the topic *humidity*. The sensor publishes the measured humidity percentage one the topic *humidity* and the collector detects that this value (65) is out of the allowed range. Thus, it publishes a message on the topic *actuator* with a new humidity value (43) to set in the house.
 
 ### Simulation
 
