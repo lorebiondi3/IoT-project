@@ -19,3 +19,6 @@ This is the overall system architecture:
 The use-case is a SmartHome application, with two functionalities:
 - Detect presence in a room and turn on/off the light in that room
 - Collect data about the humidity percentage in the house and regulate it
+
+# How to use
+The 3 code folders must be placed in **contiki-ng/examples/**
