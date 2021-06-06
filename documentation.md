@@ -128,9 +128,28 @@ In the following image an example of interaction is shown.
 
 ![mqtt-example (2)](https://user-images.githubusercontent.com/73020009/120915605-d6772200-c6a4-11eb-826b-594525419046.png)
 
-The MQTT device is subscribed to the topic *actuator* and the Java Collector is subscribed to the topic *humidity*. The sensor publishes the measured humidity percentage one the topic *humidity* and the collector detects that this value (65) is out of the allowed range. Thus, it publishes a message on the topic *actuator* with a new humidity value (43) to set in the house.
+The MQTT device is subscribed to the topic *actuator* and the Java Collector is subscribed to the topic *humidity*. The sensor publishes the measured humidity percentage on the topic *humidity* and the collector detects that this value (65) is out of the allowed range. Thus, it publishes a message on the topic *actuator* with a new humidity value (43) to set in the house.
 
 ### Simulation
+
+In this simulation are shown 4 terminals: 3 are on the testbed and 1 is opened locally on the VM. The communication between the local java collector and the broker running on the testbed is performed through the SSH tunneling mechanism. On the top left we have the MQQT sensor/actuator running on device */dev/ttyACM31*, while on the top right there is the */dev/ttyACM83* running the border router code. Then we have the MQTT Broker (bottom-left) and the Java Collector (bottom-right).
+
+![mqtt-simulation](https://user-images.githubusercontent.com/73020009/120916172-4f2bad80-c6a8-11eb-8f2b-5de3d05be146.png)
+
+The first two humidity measurements published by the sensor. Both values are within the 40%-60% range.
+
+![Screenshot (34)](https://user-images.githubusercontent.com/73020009/120917633-89994880-c6b0-11eb-8584-81b6a727e909.png)
+
+The first humidity percentage out of the range 40% - 60% :
+
+![mqtt-simulation (1)](https://user-images.githubusercontent.com/73020009/120917010-31ad1280-c6ad-11eb-9866-c6b1b98378c7.png)
+
+(The communication, as described before, is performed by the broker through the subscribe/publish mechanism and it is not a direct channel between the sensor and the collector, as shown in the figure. This is just to illustrate the situation in an easy way.)
+
+As said before, the first measurement after a setting is equal to the set value. In this case it is 45%. Then, the next humidity percentage goes back to being random. In the example, it is 39% and thus the collector is triggered to set again the humidity percentage. Now, the choosen value is 43%.
+
+![Screenshot (37)](https://user-images.githubusercontent.com/73020009/120917544-214a6700-c6b0-11eb-8e57-edf1ff167222.png)
+
 
 ## CoAP Network
 This network is simulated using Cooja and is composed by 5 CoAP sensors, one for each room. There is also an additional device that acts as border router to gain external access. Each device exposes 2 resources:
@@ -275,6 +294,11 @@ This module of the telemetry and control system collects data from IoT devices. 
 The Collector has been implemented using **Java**. In particular:
 - **Californium** has been used to implement CoAP client functionalities
 - **Paho** has been used to implement MQTT client functionalities
+
+## MySql Database
+All the data produced by the sensors are stored in a MySql Database by the Java Collector. The database runs locally on the same VM where the collector runs. The database is named **sensors** and contains two tables:
+- **CoAPData**: to store CoAP sensors data, with the following schema: ( id , date , time , room , node_id , presence ) 
+- **MQTTData**: to store MQTT sensor data, with the following schema: ( id , date , time , humidity )
 
 ## Data Encoding
 The message encoding format exploited for this project is **JSON** (*JavaScript Object Notation*), a lightweight data encoding based on collection of name-value pairs. 
