@@ -160,7 +160,7 @@ The aim of this network is to periodically detect the presence of a person in a 
 
 ### CoAP Server
 The main code of each sensor performs the following actions:
-- **Initialize** a timer (*et*) with a value of **30 seconds**. This will be the periodicity through which the sensor will send updating about the resource
+- **Initialize** a timer (*et*) with a value of **30 seconds**. This will be the periodicity through which the sensor will send updating about the presence resource
 - **Activate** both *presence* and *light* resources 
 - **Enter** this endless loop:
  ```
@@ -305,5 +305,54 @@ The message encoding format exploited for this project is **JSON** (*JavaScript 
 The use-case of this project pavents the way to this kind of encoding language, rather than XML. This is due to the **low rigidity** and simple requirements of a Smart Home application as the one presented in this document. JSON is better for simple applications, while XML is better for applications with complex requirements surrounding data interchange, such as in enterprise or in industrial control systems where security is crucial.
 The main requirements of this application are the **low latency** and the **flexibility** in the data interchange, rather than a high level of data integrity and control. Indeed, if some data get lost or arrive corrupted or incompleted to the collector, this is not a crucial problem. In this scenario, there is not a risk to the safety of people if data related to a presence in the kitchen are processed with a wrong format or some missing field. Rather, it is important to ensure a pleasant user experience by ensuring that measurements arrive as fast as possible, so that, for example, the delay between the entry of a person into a room and the switching on of its light is as imperceptible as possible.
 JSON is faster than XML, because it is designed specifically for data interchange. Indeed, JSON encoding requires less bytes for transit and the JSON parsers (as the one used in the Java Collector, *json simple*) are less complex, which requires less processing time and memory overhead. Instead, XML is slower, because it is designed for a lot more than just data interchange.
+
+## To run the project
+
+### MQTT Network
+
+SSH to remote testbed
+```
+ssh -i /path/key -p 2031 user@iot.dii.unipi.it
+```
+Set the PAN_ID to 31 for both the mqtt sensor and the border router
+```
+#define IEEE802154_CONF_PANID 0x0031
+```
+Flash the code on the mqtt sensor and on the border router. Then start the border router first.
+```
+make TARGET=nrf52840 BOARD=dongle mqtt-client.dfu-upload PORT=/dev/ttyACM31
+make TARGET=nrf52840 BOARD=dongle border-router.dfu-upload PORT=/dev/ttyACM83
+make TARGET=nrf52840 BOARD=dongle connect-router PORT=/dev/ttyACM83
+```
+Start Mosquitto, the mqtt broker
+```
+sudo mosquitto -c /etc/mosquitto/mosquitto.conf
+```
+And finally start the mqtt sensor
+```
+make TARGET=nrf52840 BOARD=dongle login PORT=/dev/ttyACM31
+```
+
+### SSH port tunneling mechanism
+To enable the communication between the Java Collector running locally and the MQTT Broker running on the testbed, run this command on the local VM
+```
+ssh -L 1883:[fd00::1]:1883 -p 2031 -i /path/key user@iot.dii.unipi.it
+```
+The collector's requests directed to *localhost:1883* will be tunneled to the remote broker.
+
+### CoAP Network
+Start a simulation on Cooja and simulate a deployment of 6 sensors as the one showed before. Flash the code ,both on the border router and on the coap servers. The border router must have a serial socket (tools->serial socket(SERVER) ). Moreover, the border router must be the first to be deployed. Then, use the tunslip6 with the following command, executed in the border router's folder.
+```
+make TARGET=cooja connect-router-cooja
+```
+Finally, start the simulation.
+
+### Java Collector
+On the project folder
+```
+mvn install
+java -jar target/collector.iot.unipi.it-0.0.1-SNAPSHOT.jar
+```
+Note: start the application after a while (30 seconds-1 minute) to give the CoAP network the time needed to build the DODAG.
 
 
