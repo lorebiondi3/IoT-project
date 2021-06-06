@@ -300,6 +300,10 @@ All the data produced by the sensors are stored in a MySql Database by the Java 
 - **CoAPData**: to store CoAP sensors data, with the following schema: ( id , date , time , room , node_id , presence ) 
 - **MQTTData**: to store MQTT sensor data, with the following schema: ( id , date , time , humidity )
 
+A snapshot of the two tables
+
+![db](https://user-images.githubusercontent.com/73020009/120921634-edc60780-c6c4-11eb-8fa9-f6d45288b500.png)
+
 ## Data Encoding
 The message encoding format exploited for this project is **JSON** (*JavaScript Object Notation*), a lightweight data encoding based on collection of name-value pairs. 
 The use-case of this project pavents the way to this kind of encoding language, rather than XML. This is due to the **low rigidity** and simple requirements of a Smart Home application as the one presented in this document. JSON is better for simple applications, while XML is better for applications with complex requirements surrounding data interchange, such as in enterprise or in industrial control systems where security is crucial.
