@@ -1,5 +1,5 @@
 # IoT-project
-This project was developed for the AIDE MSc's IoT course at the University of Pisa
+This project was developed for the AIDE MSc's IoT course at the University of Pisa.
 
 # Description
 An IoT **telemetry and control system**, composed by two different networks of IoT devices:
